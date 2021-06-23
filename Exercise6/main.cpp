@@ -29,7 +29,7 @@ struct Magnifier
 {
 	GLint mousex, mousey;//由鼠标回调函数直接得到的坐标，以窗口左上角为原点
 	GLfloat worldx, worldy;//放大镜的全局坐标，由鼠标坐标变换得到
-	GLfloat scale = 10.0f;
+	GLfloat scale = 25.0f;
 	GLfloat radius = 2.0f;
 };
 Magnifier magnifier;
@@ -42,6 +42,43 @@ struct camer {
 camer ca;
 
 void set_light();
+void init();
+void initFBO();
+void GLPOS();
+void draw_scene(bool mag);
+void display();
+void mouse(int button, int state, int x, int y);
+void mouse_motion(int x, int y);
+void mouse_wheel(int button, int dir, int x, int y);
+void mouse_passive_move(int x, int y);
+void keyboard(unsigned char key, int x, int y);
+void reshape(int w, int h);
+void idle();
+
+int main(int argc, char* argv[]) {
+	glutInit(&argc, argv);
+	glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH);
+	glutInitWindowPosition(200, 200);
+	glutInitWindowSize(WIDTH, HEIGHT);
+	glutCreateWindow("BLEND");
+
+	//如果使用FBO的话，此句不能缺少
+	GLenum err = glewInit();
+
+	init();
+	initFBO();
+	glutDisplayFunc(display);
+	glutIdleFunc(idle);
+	glutMouseFunc(mouse);
+	glutMouseWheelFunc(mouse_wheel);
+	glutMotionFunc(mouse_motion);
+	glutReshapeFunc(reshape);
+	glutPassiveMotionFunc(mouse_passive_move);
+	glutKeyboardFunc(keyboard);
+
+	glutMainLoop();
+	return 0;
+}
 
 void init() {
 	glClearColor(0.5, 0.5, 0.5, 1.0);
@@ -138,7 +175,8 @@ void draw_scene(bool mag) {
 
 		glMatrixMode(GL_MODELVIEW);
 		glTranslated(-magnifier.worldx, -magnifier.worldy, 0);
-	}else if(!mag && isOpenMagnifier){
+	}
+	else if (!mag && isOpenMagnifier) {
 		GLPOS();
 	}
 	//设置光源
@@ -150,11 +188,11 @@ void draw_scene(bool mag) {
 	//旋转
 	glRotatef(xrot, 1.0, 0.0, 0.0);
 	glRotatef(yrot, 0.0, 1.0, 0.0);
-	
+
 	//开启混合
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	
+
 	glPushMatrix();
 	//第一个壶
 	{
@@ -281,9 +319,11 @@ void mouse(int button, int state, int x, int y) {
 		isRotate = true;
 		xold = x - yrot;
 		yold = -y + xrot;
-	}else if (button == GLUT_LEFT_BUTTON && state == GLUT_UP) {
+	}
+	else if (button == GLUT_LEFT_BUTTON && state == GLUT_UP) {
 		isRotate = false;
-	}else if(button == GLUT_RIGHT_BUTTON && state == GLUT_DOWN){
+	}
+	else if (button == GLUT_RIGHT_BUTTON && state == GLUT_DOWN) {
 
 		magnifier.mousex = x;
 		magnifier.mousey = y;
@@ -312,13 +352,32 @@ void mouse_wheel(int button, int dir, int x, int y) {
 		magnifier.scale += 2;
 	}
 }
-void MousePassiveMove(int x, int y)
-{
+
+void mouse_passive_move(int x, int y) {
 
 	if (isOpenMagnifier)
 	{
 		magnifier.mousex = (GLfloat)x;
 		magnifier.mousey = (GLfloat)y;
+	}
+}
+
+void keyboard(unsigned char key, int x, int y) {
+	if(isOpenMagnifier){
+		switch (key) {
+		case 'w':
+			magnifier.scale -= 1;
+			if (magnifier.scale < 1.0)
+				magnifier.scale = 1.0;
+			break;
+		case 's':
+			magnifier.scale += 1;
+			if (magnifier.scale > 10.0)
+				magnifier.scale = 10.0;
+			break;
+		default:
+			break;
+		}
 	}
 }
 
@@ -343,28 +402,4 @@ void reshape(int w, int h) {
 
 void idle() {
 	glutPostRedisplay();
-}
-
-int main(int argc, char* argv[]) {
-	glutInit(&argc, argv);
-	glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH);
-	glutInitWindowPosition(200, 200);
-	glutInitWindowSize(WIDTH, HEIGHT);
-	glutCreateWindow("BLEND");
-
-	//如果使用FBO的话，此句不能缺少
-	GLenum err = glewInit();
-
-	init();
-	initFBO();
-	glutDisplayFunc(display);
-	glutIdleFunc(idle);
-	glutMouseFunc(mouse);
-	glutMouseWheelFunc(mouse_wheel);
-	glutMotionFunc(mouse_motion);
-	glutReshapeFunc(reshape);
-	glutPassiveMotionFunc(MousePassiveMove);
-
-	glutMainLoop();
-	return 0;
 }
